@@ -97,7 +97,7 @@ function renderComparison() {
     const area = document.getElementById('comparison-area');
     const empty = document.getElementById('empty-state');
 
-    if (!leftId || !rightId) {
+    if (!leftId && !rightId) {
         area.style.display = 'none';
         empty.style.display = '';
         return;
@@ -105,9 +105,13 @@ function renderComparison() {
 
     if (typeof window.getHouseById !== 'function') return;
 
-    const left = window.getHouseById(leftId);
-    const right = window.getHouseById(rightId);
-    if (!left || !right) return;
+    const emptyHouse = {
+        id: '', name: '', type: '', images: [], fields: [],
+        pros: '', cons: '', notes: '', rating: 0
+    };
+
+    const left = leftId ? (window.getHouseById(leftId) || emptyHouse) : emptyHouse;
+    const right = rightId ? (window.getHouseById(rightId) || emptyHouse) : emptyHouse;
 
     area.style.display = '';
     empty.style.display = 'none';
@@ -185,6 +189,9 @@ function renderComparison() {
 
 // ---- HTML Helpers ----
 function stickyColHTML(house) {
+    if (!house.id) {
+        return `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);opacity:0.4;">?</div><div class="sticky-name" style="color:var(--text-tertiary)">— ยังไม่เลือก —</div><div class="sticky-type"></div>`;
+    }
     const thumb = house.images && house.images.length > 0
         ? `<img class="sticky-thumb" src="${escAttr(house.images[0])}" alt="${escAttr(house.name)}">`
         : `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);">🏠</div>`;
