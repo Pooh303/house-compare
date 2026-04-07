@@ -25,15 +25,9 @@
                 <!-- User Profile Area (แสดงเมื่อล็อกอิน) -->
                 <div id="user-profile-area" class="user-profile-area" style="display:none;"></div>
 
-                <!-- Admin Mode Toggle (แสดงเมื่อเป็น Admin) -->
-                <div id="mode-toggle" class="mode-toggle" style="display:none;">
-                    <button class="mode-btn active" data-mode="admin">🔧 Admin</button>
-                    <button class="mode-btn" data-mode="user">👤 User</button>
-                </div>
-
-                <!-- Action Buttons (dynamic ตาม mode) -->
-                <button id="btn-manage" class="nav-btn" style="display:none;">จัดการที่พัก</button>
-                <button id="btn-vote-nav" class="nav-btn">โหวตที่พัก</button>
+                <!-- Action Buttons -->
+                <button id="btn-manage" class="nav-btn">จัดการที่พัก</button>
+                <button id="btn-vote-nav" class="nav-btn">🗳️ โหวตที่พัก</button>
 
                 <!-- Logout (แสดงเมื่อ login แล้ว) -->
                 <button id="btn-logout" class="nav-btn ghost"
@@ -144,13 +138,22 @@
 
                     <div class="form-group">
                         <label>ประเภท</label>
-                        <select id="f-type">
-                            <option value="บ้านเดี่ยว">บ้านเดี่ยว</option>
-                            <option value="ทาวน์เฮ้าส์">ทาวน์เฮ้าส์</option>
-                            <option value="คอนโด">คอนโด</option>
-                            <option value="อพาร์ทเมนท์">อพาร์ทเมนท์</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
-                        </select>
+                        <div class="custom-select" id="type-custom-select">
+                            <div class="select-trigger">
+                                <span id="select-trigger-text">บ้านเดี่ยว</span>
+                                <div class="select-arrow"></div>
+                            </div>
+                            <div class="select-options">
+                                <div class="select-option selected" data-value="บ้านเดี่ยว">🏠 บ้านเดี่ยว</div>
+                                <div class="select-option" data-value="ทาวน์เฮ้าส์">🏘️ ทาวน์เฮ้าส์</div>
+                                <div class="select-option" data-value="คอนโด">🏢 คอนโด</div>
+                                <div class="select-option" data-value="อพาร์ทเมนท์">🏨 อพาร์ทเมนท์</div>
+                                <div class="select-option" data-value="รีสอร์ท"> 🏖️ รีสอร์ท </div>
+                                <div class="select-option" data-value="โฮมสเตย์ / วิลล่า"> 🏡 โฮมสเตย์ / วิลล่า</div>
+                                <div class="select-option" data-value="อื่นๆ">✨ อื่นๆ</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="f-type" value="บ้านเดี่ยว">
                     </div>
 
                     <!-- Images -->
@@ -162,9 +165,15 @@
                                 onclick="document.getElementById('f-image-upload').click()">📷
                                 อัปโหลดไฟล์รูปภาพจากเครื่อง</button>
                         </div>
-                        <textarea id="f-images" rows="3" placeholder="https://example.com/photo.jpg"></textarea>
-                        <small class="form-hint">เลือกรูปภาพหลายรูปพร้อมกันได้ หรือจะแปะลิงก์ URL (1 บรรทัดต่อ 1 ลิงก์)
-                            ก็ได้เช่นกัน</small>
+                        <div id="image-links-capsules" class="image-links-capsules" style="margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="f-image-input" placeholder="แปะลิงก์ URL ที่นี่แล้วกด Enter"
+                                autocomplete="off" style="flex:1;">
+                            <button type="button" class="btn-secondary" id="btn-add-image-link">เพิ่ม</button>
+                        </div>
+                        <textarea id="f-images" rows="3" style="display:none;"></textarea>
+                        <small class="form-hint" style="display:block; margin-top:8px;">เลือกรูปภาพหลายรูปโดยแคปซูล
+                            หรือจะแปะลิงก์ URL แล้วกด Enter</small>
                     </div>
 
                     <!-- Dynamic fields -->

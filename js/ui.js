@@ -17,7 +17,6 @@ function showToast(msg, duration = 2500) {
 
 function updateAuthUI() {
     const profileArea = document.getElementById('user-profile-area');
-    const modeToggle = document.getElementById('mode-toggle');
     const btnManage = document.getElementById('btn-manage');
     const btnVote = document.getElementById('btn-vote-nav');
     const btnLogout = document.getElementById('btn-logout');
@@ -38,41 +37,21 @@ function updateAuthUI() {
         btnLogout.style.display = '';
 
         if (window.isAdmin) {
-            // ---- Admin — แสดง mode toggle ----
-            modeToggle.style.display = '';
-            updateModeToggle();
-
-            if (window.adminMode) {
-                btnManage.style.display = '';
-                btnVote.style.display = 'none';
-            } else {
-                btnManage.style.display = 'none';
-                btnVote.style.display = '';
-            }
+            // ---- Admin — เห็นทั้ง จัดการ + โหวต ----
+            btnManage.style.display = '';
+            btnVote.style.display = '';
         } else {
-            // ---- User ทั่วไป — แสดงปุ่ม Vote ----
-            modeToggle.style.display = 'none';
+            // ---- User ทั่วไป — เห็นแค่โหวต ----
             btnManage.style.display = 'none';
             btnVote.style.display = '';
         }
     } else {
         // ====== Guest (ไม่ล็อกอิน) ======
-        if (window.updateModeUI) window.updateModeUI();
         profileArea.style.display = 'none';
-        modeToggle.style.display = 'none';
         btnManage.style.display = 'none';
-        btnVote.style.display = '';  // Guest เห็นปุ่มโหวตเสมอ
+        btnVote.style.display = '';
         btnLogout.style.display = 'none';
     }
-}
-
-function updateModeToggle() {
-    const toggle = document.getElementById('mode-toggle');
-    if (!toggle) return;
-    toggle.querySelectorAll('.mode-btn').forEach(btn => {
-        const isAdminBtn = btn.dataset.mode === 'admin';
-        btn.classList.toggle('active', isAdminBtn === window.adminMode);
-    });
 }
 
 // ============================================
@@ -268,6 +247,7 @@ function populateSelectors() {
 function initCustomSelects() {
     document.querySelectorAll('.custom-select').forEach(csel => {
         const trigger = csel.querySelector('.cs-trigger');
+        if (!trigger) return;
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             document.querySelectorAll('.custom-select.open').forEach(c => {
@@ -386,7 +366,18 @@ function renderComparison() {
             openLightbox(house.images, idx);
         });
     });
+
+    adjustStickyTop();
 }
+
+function adjustStickyTop() {
+    const topnav = document.querySelector('.topnav');
+    const stickyHeader = document.querySelector('.compare-sticky');
+    if (topnav && stickyHeader) {
+        stickyHeader.style.top = topnav.offsetHeight + 'px';
+    }
+}
+window.addEventListener('resize', adjustStickyTop);
 
 // ============================================
 // HTML HELPERS
@@ -401,7 +392,7 @@ function stickyColHTML(house) {
         : `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);">🏠</div>`;
 
     // แสดงปุ่มแก้ไขเฉพาะ admin mode
-    const btnEdit = (window.isAdmin && window.adminMode) ? `<button class="btn-edit-quick" data-id="${house.id}" title="แก้ไขข้อมูล">✏️</button>` : '';
+    const btnEdit = window.isAdmin ? `<button class="btn-edit-quick" data-id="${house.id}" title="แก้ไขข้อมูล">✏️</button>` : '';
 
     // แสดงจำนวน vote เป็นปุ่ม
     const voteCount = window.getVoteCount ? window.getVoteCount(house.id) : 0;
@@ -550,14 +541,152 @@ function renderHouseList() {
 }
 
 // ============================================
-// EDIT MODAL
+// IMAGE CAPSULES
 // ============================================
 
-function openEditModal(id) {
+window.renderImageCapsules = function () {
+    const container = document.getElementById('image-links-capsules');
+    const textarea = document.getElementById('f-images');
+    const links = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+    
+    container.innerHTML = links.map((link, idx) => `
+        <div class="capsule-item">
+            <span class="capsule-link-text" title="${escAttr(link)}" onclick="editImageCapsule(${idx})">${escHTML(link)}</span>
+            <button type="button" class="capsule-remove" title="ลบ" onclick="removeImageCapsule(${idx})">&times;</button>
+        </div>
+    `).join('');
+}
+
+window.addImageCapsule = function (url) {
+    if (!url) return;
+    const textarea = document.getElementById('f-images');
+    const current = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+    current.push(url);
+    textarea.value = current.join('\n');
+    renderImageCapsules();
+}
+
+window.removeImageCapsule = function (idx) {
+    const textarea = document.getElementById('f-images');
+    const current = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+    current.splice(idx, 1);
+    textarea.value = current.join('\n');
+    renderImageCapsules();
+}
+
+window.editImageCapsule = function (idx) {
+    const textarea = document.getElementById('f-images');
+    const current = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const link = current[idx];
+    
+    // เอาลิงก์กลับไปใส่ใน input
+    document.getElementById('f-image-input').value = link;
+    
+    // ลบออกจากรายการ
+    current.splice(idx, 1);
+    textarea.value = current.join('\n');
+    renderImageCapsules();
+    
+    document.getElementById('f-image-input').focus();
+}
+
+// Setup input listeners for Capsules
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('f-image-input');
+    const btn = document.getElementById('btn-add-image-link');
+    
+    if (input && btn) {
+        btn.addEventListener('click', () => {
+            const val = input.value.trim();
+            if (val) {
+                addImageCapsule(val);
+                input.value = '';
+            }
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // ไม่ให้ฟอร์ม submit
+                const val = input.value.trim();
+                if (val) {
+                    addImageCapsule(val);
+                    input.value = '';
+                }
+            }
+        });
+    }
+});
+
+// ============================================
+// ============================================
+// MODALS
+// ============================================
+
+// Custom Select Initialization
+document.addEventListener('DOMContentLoaded', () => {
+    const customSelect = document.getElementById('type-custom-select');
+    if (!customSelect) return;
+    
+    const trigger = customSelect.querySelector('.select-trigger');
+    const options = customSelect.querySelectorAll('.select-option');
+    const hiddenInput = document.getElementById('f-type');
+    const triggerText = document.getElementById('select-trigger-text');
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        customSelect.classList.toggle('open');
+    });
+
+    options.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            options.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            
+            const value = option.dataset.value;
+            triggerText.textContent = option.textContent;
+            hiddenInput.value = value;
+            customSelect.classList.remove('open');
+        });
+    });
+
+    // ปิด dropdown เมื่อคลิกที่อื่น
+    document.addEventListener('click', () => {
+        customSelect.classList.remove('open');
+    });
+});
+
+window.updateCustomSelectUI = function(value) {
+    const customSelect = document.getElementById('type-custom-select');
+    if (!customSelect) return;
+    const options = customSelect.querySelectorAll('.select-option');
+    const triggerText = document.getElementById('select-trigger-text');
+    
+    let matched = false;
+    options.forEach(option => {
+        if (option.dataset.value === value) {
+            option.classList.add('selected');
+            triggerText.textContent = option.textContent;
+            matched = true;
+        } else {
+            option.classList.remove('selected');
+        }
+    });
+
+    if (!matched && options.length > 0) {
+        options[0].classList.add('selected');
+        triggerText.textContent = options[0].textContent;
+        document.getElementById('f-type').value = options[0].dataset.value;
+    }
+}
+
+window.openEditModal = function (id) {
     const modal = document.getElementById('modal-edit');
     const form = document.getElementById('house-form');
     const title = document.getElementById('edit-modal-title');
+
     form.reset();
+    document.getElementById('f-image-input').value = ''; // เคลียร์ช่อง input link ล่าสุด
 
     if (id) {
         if (typeof window.getHouseById !== 'function') return;
@@ -567,6 +696,7 @@ function openEditModal(id) {
         document.getElementById('f-id').value = h.id;
         document.getElementById('f-name').value = h.name;
         document.getElementById('f-type').value = h.type;
+        if (window.updateCustomSelectUI) window.updateCustomSelectUI(h.type);
         document.getElementById('f-images').value = (h.images || []).join('\n');
         document.getElementById('f-pros').value = h.pros || '';
         document.getElementById('f-cons').value = h.cons || '';
@@ -576,6 +706,8 @@ function openEditModal(id) {
     } else {
         title.textContent = 'เพิ่มที่พักใหม่';
         document.getElementById('f-id').value = '';
+        document.getElementById('f-type').value = 'บ้านเดี่ยว';
+        if (window.updateCustomSelectUI) window.updateCustomSelectUI('บ้านเดี่ยว');
         renderDynamicFields([
             { label: 'ราคา', value: '' },
             { label: 'พื้นที่ใช้สอย', value: '' },
@@ -610,16 +742,52 @@ function addDynFieldRow(label, value) {
     const container = document.getElementById('dynamic-fields');
     const row = document.createElement('div');
     row.className = 'dyn-row';
-    row.draggable = true;
+    row.draggable = false; // Default false so inputs can be selected
     row.innerHTML = `
         <div class="dyn-drag-handle" title="ลากเพื่อสลับลำดับ">☰</div>
         <input type="text" class="dyn-label" placeholder="ชื่อ field" value="${escAttr(label || '')}">
-        <input type="text" class="dyn-value" placeholder="ค่า" value="${escAttr(value || '')}">
+        <textarea class="dyn-value" rows="1" placeholder="ค่า" style="resize:none; overflow:hidden; display:block; padding: 10px 14px; line-height: 1.6;">${escHTML(value || '')}</textarea>
         <button type="button" class="btn-icon dyn-remove" title="ลบ">✕</button>
     `;
 
+    // จัดการขนาด textarea ให้ขยายตามเนื้อหา
+    const valueInput = row.querySelector('.dyn-value');
+    valueInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+    
+    // รองรับ Shift + Tab เพื่อขึ้นบรรทัดใหม่ตามที่ User ขอ
+    valueInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab' && e.shiftKey) {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + '\n' + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 1;
+            this.dispatchEvent(new Event('input')); // อัปเดตความสูง
+        }
+        // ปกติกด Enter ใน textarea ก็จะขึ้นบรรทัดใหม่อยู่แล้ว
+    });
+
+    // เซ็ตความสูงเริ่มต้นถ้ามีเนื้อหาหลายบรรทัด
+    setTimeout(() => {
+        if (valueInput.value) {
+            valueInput.style.height = 'auto';
+            valueInput.style.height = (valueInput.scrollHeight) + 'px';
+        }
+    }, 0);
+
+    // เฉพาะกดตรง handle ถึงจะลากได้
+    const handle = row.querySelector('.dyn-drag-handle');
+    handle.addEventListener('mousedown', () => row.draggable = true);
+    handle.addEventListener('touchstart', () => row.draggable = true, { passive: true });
+
     row.addEventListener('dragstart', () => { row.classList.add('dragging'); });
-    row.addEventListener('dragend', () => { row.classList.remove('dragging'); });
+    row.addEventListener('dragend', () => { 
+        row.classList.remove('dragging'); 
+        row.draggable = false; // Reset กลับเพื่อให้อินพุตใช้งานได้ปกติ
+    });
 
     row.querySelector('.dyn-remove').addEventListener('click', () => row.remove());
     container.appendChild(row);

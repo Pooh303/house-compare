@@ -40,7 +40,6 @@ window.globalHouses = [];
 window.globalVotes = {};
 window.currentUser = null;   // { uid, displayName, photoURL, email }
 window.isAdmin = false;      // uid อยู่ใน /admins whitelist
-window.adminMode = false;    // กำลังใช้ admin mode อยู่
 window.isUser = false;       // ล็อกอินแล้ว (ไม่ว่า admin หรือ user)
 
 // ============================================
@@ -91,16 +90,13 @@ onAuthStateChanged(auth, async (user) => {
         try {
             const adminSnap = await get(ref(db, `admins/${user.uid}`));
             window.isAdmin = adminSnap.exists();
-            window.adminMode = window.isAdmin;
         } catch (err) {
             // console.warn("ไม่สามารถเช็ค admin status:", err);
             window.isAdmin = false;
-            window.adminMode = false;
         }
     } else {
         window.currentUser = null;
         window.isAdmin = false;
-        window.adminMode = false;
         window.isUser = false;
     }
 
@@ -118,24 +114,15 @@ window.userGoogleLogin = async function () {
         const result = await signInWithPopup(auth, googleProvider);
         return result;
     } catch (err) {
-        console.error('Popup error:', err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+            console.error('Popup error:', err);
+        }
         throw err;
     }
 }
 
 window.userLogout = function () {
     return signOut(auth);
-}
-
-// ============================================
-// ADMIN MODE TOGGLE
-// ============================================
-
-window.switchMode = function (toAdminMode) {
-    if (!window.isAdmin) return; // ไม่ใช่ admin ห้าม switch
-    window.adminMode = toAdminMode;
-    if (window.updateAuthUI) window.updateAuthUI();
-    if (window.renderComparison) window.renderComparison();
 }
 
 // ============================================

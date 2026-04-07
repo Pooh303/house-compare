@@ -28,14 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('ออกจากระบบเรียบร้อย');
     });
 
-    // ---- Admin Mode Toggle ----
-    document.getElementById('mode-toggle').addEventListener('click', (e) => {
-        const btn = e.target.closest('.mode-btn');
-        if (!btn) return;
-        const toAdmin = btn.dataset.mode === 'admin';
-        if (typeof window.switchMode === 'function') window.switchMode(toAdmin);
-    });
-
     // ============================================
     // MANAGE (Admin) EVENTS
     // ============================================
@@ -167,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         textarea.value = currentVals.join('\n');
+        if (window.renderImageCapsules) window.renderImageCapsules();
         e.target.value = '';
         showToast('เตรียมรูปภาพเรียบร้อยแล้ว');
     });

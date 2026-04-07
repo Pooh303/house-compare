@@ -106,6 +106,78 @@ textarea {
     resize: vertical;
 }
 
+/* Custom Select */
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+.select-trigger {
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    width: 100%;
+    transition: border var(--transition);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.select-trigger:hover, .custom-select.open .select-trigger {
+    border-color: var(--accent);
+}
+.select-arrow {
+    width: 12px;
+    height: 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8.825L1.175 4 2.238 2.938 6 6.7 9.763 2.937 10.825 4z' fill='%23a1a1a6'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: transform 0.2s;
+}
+.custom-select.open .select-arrow {
+    transform: rotate(180deg);
+}
+.select-options {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: all 0.2s cubic-bezier(.4, 0, .2, 1);
+    max-height: 250px;
+    overflow-y: auto;
+}
+.custom-select.open .select-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.select-option {
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--text-primary);
+}
+.select-option:hover {
+    background: var(--bg-input);
+}
+.select-option.selected {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+}
+
 /* ---- UTILITIES ---- */
 .full-w {
     width: 100%;
@@ -491,11 +563,15 @@ textarea {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
     padding: 20px 0;
+    align-items: stretch;
 }
 
 .sticky-col {
     position: relative;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .sticky-col .sticky-thumb {
@@ -505,18 +581,32 @@ textarea {
     border-radius: var(--radius);
     margin: 0 auto 8px;
     border: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .sticky-col .sticky-name {
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--text-primary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 1.6em;
+    word-break: break-word;
 }
 
 .sticky-col .sticky-type {
     font-size: 0.78rem;
     color: var(--text-tertiary);
     margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.sticky-col .sticky-vote-count {
+    margin-top: auto;
 }
 
 .btn-edit-quick {
@@ -870,7 +960,7 @@ textarea {
 .dyn-row {
     display: flex;
     gap: 8px;
-    align-items: center;
+    align-items: flex-start;
     background: var(--bg-card);
     padding: 8px 12px;
     border-radius: var(--radius-sm);
@@ -891,6 +981,7 @@ textarea {
     align-items: center;
     user-select: none;
     font-size: 1.1rem;
+    margin-top: 8px;
 }
 .dyn-drag-handle:active {
     cursor: grabbing;
@@ -906,6 +997,52 @@ textarea {
 
 .dyn-row .btn-icon {
     flex-shrink: 0;
+    margin-top: 6px;
+}
+
+/* Image Capsules */
+.image-links-capsules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.capsule-item {
+    display: flex;
+    align-items: center;
+    background: var(--bg-input);
+    border: 1px solid var(--border-strong);
+    border-radius: 980px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    max-width: 100%;
+}
+
+.capsule-link-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    cursor: pointer;
+    color: var(--accent);
+}
+
+.capsule-link-text:hover {
+    text-decoration: underline;
+}
+
+.capsule-remove {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    margin-left: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.capsule-remove:hover {
+    color: var(--red);
 }
 
 /* House list in manage modal */
