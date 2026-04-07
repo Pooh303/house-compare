@@ -11,9 +11,199 @@ function showToast(msg, duration = 2500) {
     el._timer = setTimeout(() => el.classList.remove('show'), duration);
 }
 
-// ---- Populate Custom Selectors ----
+// ============================================
+// AUTH UI — แสดง/ซ่อนปุ่มตาม login state
+// ============================================
+
+function updateAuthUI() {
+    const profileArea = document.getElementById('user-profile-area');
+    const modeToggle = document.getElementById('mode-toggle');
+    const btnManage = document.getElementById('btn-manage');
+    const btnVote = document.getElementById('btn-vote-nav');
+    const btnLogout = document.getElementById('btn-logout');
+
+    if (window.currentUser) {
+        // ====== ล็อกอินแล้ว ======
+        const photoURL = window.currentUser.photoURL || '';
+        const displayName = window.currentUser.displayName || window.currentUser.email || 'User';
+
+        profileArea.innerHTML = `
+            <img class="user-avatar" 
+                 src="${escAttr(photoURL)}" 
+                 alt="${escAttr(displayName)}"
+                 title="${escAttr(displayName)}"
+                 onerror="this.style.display='none'">
+            <span class="user-name">${escHTML(displayName)}</span>`;
+        profileArea.style.display = 'flex';
+        btnLogout.style.display = '';
+
+        if (window.isAdmin) {
+            // ---- Admin — แสดง mode toggle ----
+            modeToggle.style.display = '';
+            updateModeToggle();
+
+            if (window.adminMode) {
+                btnManage.style.display = '';
+                btnVote.style.display = 'none';
+            } else {
+                btnManage.style.display = 'none';
+                btnVote.style.display = '';
+            }
+        } else {
+            // ---- User ทั่วไป — แสดงปุ่ม Vote ----
+            modeToggle.style.display = 'none';
+            btnManage.style.display = 'none';
+            btnVote.style.display = '';
+        }
+    } else {
+        // ====== Guest (ไม่ล็อกอิน) ======
+        if (window.updateModeUI) window.updateModeUI();
+        profileArea.style.display = 'none';
+        modeToggle.style.display = 'none';
+        btnManage.style.display = 'none';
+        btnVote.style.display = '';  // Guest เห็นปุ่มโหวตเสมอ
+        btnLogout.style.display = 'none';
+    }
+}
+
+function updateModeToggle() {
+    const toggle = document.getElementById('mode-toggle');
+    if (!toggle) return;
+    toggle.querySelectorAll('.mode-btn').forEach(btn => {
+        const isAdminBtn = btn.dataset.mode === 'admin';
+        btn.classList.toggle('active', isAdminBtn === window.adminMode);
+    });
+}
+
+// ============================================
+// VOTE MODAL
+// ============================================
+
+function renderVoteModal() {
+    if (typeof window.getAllHouses !== 'function') return;
+    const houses = window.getAllHouses();
+    const votes = window.globalVotes || {};
+    const currentVoteHouseId = window.getUserVote ? window.getUserVote() : null;
+    const list = document.getElementById('vote-list');
+
+    if (houses.length === 0) {
+        list.innerHTML = '<p style="color:var(--text-tertiary);text-align:center;padding:20px;">ยังไม่มีที่พัก</p>';
+        return;
+    }
+
+    // หา total votes สำหรับ progress bar
+    let maxVotes = 0;
+    houses.forEach(h => {
+        const count = votes[h.id] ? Object.keys(votes[h.id]).length : 0;
+        if (count > maxVotes) maxVotes = count;
+    });
+
+    list.innerHTML = houses.map(h => {
+        const voteCount = votes[h.id] ? Object.keys(votes[h.id]).length : 0;
+        const isVoted = h.id === currentVoteHouseId;
+        const barPct = maxVotes > 0 ? (voteCount / maxVotes) * 100 : 0;
+
+        let avatarHtml = '';
+        if (voteCount > 0) {
+            const votersObj = votes[h.id];
+            // กรองเอาเฉพาะข้อมูลที่มีรูปภาพ (ข้าม vote แบบ true แบบเก่า)
+            const voterList = Object.values(votersObj).filter(v => v !== true && v.photoURL);
+
+            // แสดงรูปสุดสุด 5 คน
+            const displayList = voterList.slice(0, 5);
+            const avatars = displayList.map(v => `<img class="voter-avatar" src="${escAttr(v.photoURL)}" title="${escAttr(v.displayName)}">`).join('');
+
+            const moreCount = voteCount > 5 ? voteCount - 5 : 0;
+            const moreBadge = moreCount > 0 ? `<div class="voter-more" title="และอีก ${moreCount} คน">+${moreCount}</div>` : '';
+
+            if (avatars) {
+                avatarHtml = `<div class="voter-avatars">${avatars}${moreBadge}</div>`;
+            }
+        }
+
+        const thumb = h.images && h.images.length > 0
+            ? `<img class="vote-item-thumb" src="${escAttr(h.images[0])}" alt="">`
+            : `<div class="vote-item-thumb vote-item-thumb-empty">🏠</div>`;
+
+        const loggedIn = !!window.currentUser;
+        let btnText = 'โหวต';
+        let btnClass = 'btn-vote';
+
+        if (!loggedIn) {
+            btnText = 'โหวต';
+            btnClass += ' btn-vote-login';
+        } else if (isVoted) {
+            btnText = '✅ โหวตแล้ว';
+            btnClass += ' voted';
+        }
+
+        return `<div class="vote-item ${isVoted ? 'voted' : ''}" data-house-id="${h.id}">
+            ${thumb}
+            <div class="vote-item-info">
+                <div class="vote-item-name">${escHTML(h.name)}</div>
+                <div class="vote-item-type">${escHTML(h.type)}</div>
+                ${avatarHtml}
+            </div>
+            <div class="vote-item-right">
+                <div class="vote-count">${voteCount}</div>
+                <div class="vote-count-label">โหวต</div>
+                <button class="${btnClass}" data-house-id="${h.id}">
+                    ${btnText}
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Bind vote buttons
+    list.querySelectorAll('.btn-vote').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            // กรณีไม่ล็อกอิน → เปิด login popup แล้วโหวตอัตโนมัติ
+            if (btn.classList.contains('btn-vote-login')) {
+                const houseId = btn.dataset.houseId;
+                btn.disabled = true;
+                btn.textContent = 'กำลังเข้าสู่ระบบ...';
+                try {
+                    const result = await window.userGoogleLogin();
+                    if (result && result.user) {
+                        // ล็อกอินสำเร็จ → โหวตให้เลย
+                        await window.castVote(houseId);
+                        showToast('เข้าสู่ระบบ & โหวตเรียบร้อย! 🎉');
+                    }
+                } catch (e) {
+                    if (e.code !== 'auth/popup-closed-by-user') {
+                        console.error('Login error:', e);
+                        showToast('เข้าสู่ระบบล้มเหลว');
+                    }
+                }
+                btn.disabled = false;
+                // re-render modal ใหม่ (ไม่ว่า login สำเร็จหรือไม่)
+                if (typeof window.renderVoteModal === 'function') window.renderVoteModal();
+                return;
+            }
+
+            // ป้องกันการกดโหวตซ้ำที่เดิม (หลีกเลี่ยง UI กะพริบ)
+            if (btn.classList.contains('voted')) return;
+
+            btn.disabled = true;
+            btn.textContent = '⏳...';
+            try {
+                await window.castVote(btn.dataset.houseId);
+                showToast('โหวตเรียบร้อย! 🎉');
+            } catch (e) {
+                console.error(e);
+                showToast(e.message || 'เกิดข้อผิดพลาด');
+            }
+            btn.disabled = false;
+        });
+    });
+}
+
+// ============================================
+// POPULATE SELECTORS
+// ============================================
+
 function populateSelectors() {
-    if (typeof window.getAllHouses !== 'function') return; // Wait until data.js is loaded
+    if (typeof window.getAllHouses !== 'function') return;
     const houses = window.getAllHouses();
     const leftVal = document.getElementById('select-left').value;
     const rightVal = document.getElementById('select-right').value;
@@ -24,7 +214,6 @@ function populateSelectors() {
         const menu = csel.querySelector('.cs-menu');
         const textEl = csel.querySelector('.cs-text');
         const currentVal = hidden.value;
-        const otherVal = side === 'left' ? rightVal : leftVal;
 
         if (houses.length === 0) {
             menu.innerHTML = '<div class="cs-empty">ยังไม่มีที่พัก<br>กด "จัดการที่พัก" เพื่อเพิ่ม</div>';
@@ -48,10 +237,10 @@ function populateSelectors() {
 
         // Update display text and remove loading states
         const trigger = csel.querySelector('.cs-trigger');
-        if(trigger) trigger.disabled = false; // ปลดล็อคปุ่ม
-        
+        if (trigger) trigger.disabled = false;
+
         const label = csel.parentElement.querySelector('.selector-label');
-        if(label) label.textContent = side === 'left' ? 'ที่พักหลังที่ 1' : 'ที่พักหลังที่ 2';
+        if (label) label.textContent = side === 'left' ? 'ที่พักหลังที่ 1' : 'ที่พักหลังที่ 2';
 
         const selected = houses.find(h => h.id === currentVal);
         if (selected) {
@@ -75,27 +264,27 @@ function populateSelectors() {
     });
 }
 
-// ---- Custom Select toggle (called once from app.js) ----
+// ---- Custom Select toggle ----
 function initCustomSelects() {
     document.querySelectorAll('.custom-select').forEach(csel => {
         const trigger = csel.querySelector('.cs-trigger');
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Close others
             document.querySelectorAll('.custom-select.open').forEach(c => {
                 if (c !== csel) c.classList.remove('open');
             });
             csel.classList.toggle('open');
         });
     });
-    // Close on outside click
     document.addEventListener('click', () => {
         document.querySelectorAll('.custom-select.open').forEach(c => c.classList.remove('open'));
     });
 }
 
+// ============================================
+// COMPARISON RENDERING
+// ============================================
 
-// ---- Render Comparison ----
 function renderComparison() {
     const leftId = document.getElementById('select-left').value;
     const rightId = document.getElementById('select-right').value;
@@ -125,7 +314,7 @@ function renderComparison() {
     document.getElementById('sticky-left').innerHTML = stickyColHTML(left);
     document.getElementById('sticky-right').innerHTML = stickyColHTML(right);
 
-    // Bind edit buttons
+    // Bind edit buttons (admin mode only)
     document.querySelectorAll('.btn-edit-quick').forEach(btn => {
         btn.addEventListener('click', () => {
             openEditModal(btn.dataset.id);
@@ -154,7 +343,7 @@ function renderComparison() {
     });
     body.innerHTML += sectionHTML('ข้อมูลเปรียบเทียบ', null, fieldRows);
 
-    // -- Rating (optional) --
+    // -- Rating --
     if ((left.rating && left.rating > 0) || (right.rating && right.rating > 0)) {
         body.innerHTML += sectionHTML('คะแนนรวม', null,
             `<div class="compare-row">
@@ -199,7 +388,10 @@ function renderComparison() {
     });
 }
 
-// ---- HTML Helpers ----
+// ============================================
+// HTML HELPERS
+// ============================================
+
 function stickyColHTML(house) {
     if (!house.id) {
         return `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);opacity:0.4;">?</div><div class="sticky-name" style="color:var(--text-tertiary)">— ยังไม่เลือก —</div><div class="sticky-type"></div>`;
@@ -207,10 +399,15 @@ function stickyColHTML(house) {
     const thumb = house.images && house.images.length > 0
         ? `<img class="sticky-thumb" src="${escAttr(house.images[0])}" alt="${escAttr(house.name)}">`
         : `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);">🏠</div>`;
-        
-    const btnEdit = window.isAdmin ? `<button class="btn-edit-quick admin-only" data-id="${house.id}" title="แก้ไขข้อมูล">✏️</button>` : '';
 
-    return `${thumb}${btnEdit}<div class="sticky-name">${escHTML(house.name)}</div><div class="sticky-type">${escHTML(house.type)}</div>`;
+    // แสดงปุ่มแก้ไขเฉพาะ admin mode
+    const btnEdit = (window.isAdmin && window.adminMode) ? `<button class="btn-edit-quick" data-id="${house.id}" title="แก้ไขข้อมูล">✏️</button>` : '';
+
+    // แสดงจำนวน vote เป็นปุ่ม
+    const voteCount = window.getVoteCount ? window.getVoteCount(house.id) : 0;
+    const voteTag = `<button class="sticky-vote-count btn-vote-toggle" title="ดูผลโหวต / โหวตที่พัก">${voteCount} โหวต</button>`;
+
+    return `${thumb}${btnEdit}<div class="sticky-name">${escHTML(house.name)}</div><div class="sticky-type">${escHTML(house.type)}</div>${voteTag}`;
 }
 
 function sectionHTML(title, galleryRows, innerHTML) {
@@ -276,9 +473,12 @@ function getFieldValue(fields, label) {
 }
 
 function escHTML(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function escAttr(s) { if (!s) return ''; return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function escAttr(s) { if (!s) return ''; return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/`/g, '&#96;'); }
 
-// ---- Lightbox ----
+// ============================================
+// LIGHTBOX
+// ============================================
+
 let lbImages = [];
 let lbIdx = 0;
 
@@ -299,7 +499,10 @@ function updateLightbox() {
     document.getElementById('lb-counter').textContent = `${lbIdx + 1} / ${lbImages.length}`;
 }
 
-// ---- Manage Modal: render house list ----
+// ============================================
+// MANAGE MODAL — house list (admin)
+// ============================================
+
 function renderHouseList() {
     if (typeof window.getAllHouses !== 'function') return;
     const houses = window.getAllHouses();
@@ -346,7 +549,10 @@ function renderHouseList() {
     });
 }
 
-// ---- Edit Modal ----
+// ============================================
+// EDIT MODAL
+// ============================================
+
 function openEditModal(id) {
     const modal = document.getElementById('modal-edit');
     const form = document.getElementById('house-form');
@@ -390,7 +596,10 @@ function closeModal(id) {
     }
 }
 
-// ---- Dynamic Fields ----
+// ============================================
+// DYNAMIC FIELDS
+// ============================================
+
 function renderDynamicFields(fields) {
     const container = document.getElementById('dynamic-fields');
     container.innerHTML = '';
@@ -408,15 +617,10 @@ function addDynFieldRow(label, value) {
         <input type="text" class="dyn-value" placeholder="ค่า" value="${escAttr(value || '')}">
         <button type="button" class="btn-icon dyn-remove" title="ลบ">✕</button>
     `;
-    
-    // Drag events
-    row.addEventListener('dragstart', () => {
-        row.classList.add('dragging');
-    });
-    row.addEventListener('dragend', () => {
-        row.classList.remove('dragging');
-    });
-    
+
+    row.addEventListener('dragstart', () => { row.classList.add('dragging'); });
+    row.addEventListener('dragend', () => { row.classList.remove('dragging'); });
+
     row.querySelector('.dyn-remove').addEventListener('click', () => row.remove());
     container.appendChild(row);
 }

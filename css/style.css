@@ -153,15 +153,78 @@ textarea {
     letter-spacing: -0.02em;
 }
 
-.topnav-actions {
+.topnav-right {
     display: flex;
     gap: 8px;
+    align-items: center;
     flex-wrap: wrap;
     justify-content: flex-end;
 }
 
-#btn-mobile-menu {
-    display: none !important;
+/* ---- User Profile ---- */
+.user-profile-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+    transition: transform var(--transition), box-shadow var(--transition);
+    flex-shrink: 0;
+}
+
+.user-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(41, 151, 255, 0.25);
+}
+
+.user-name {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* ---- Admin Mode Toggle ---- */
+.mode-toggle {
+    display: flex;
+    background: var(--bg-input);
+    border-radius: 980px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    gap: 2px;
+}
+
+.mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    padding: 4px 14px;
+    border-radius: 980px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+
+.mode-btn:hover {
+    color: var(--text-primary);
+}
+
+.mode-btn.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(41, 151, 255, 0.3);
 }
 
 .nav-btn {
@@ -222,7 +285,7 @@ textarea {
     width: 100%;
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 24px 48px;
+    padding: 0 16px 48px;
 }
 
 
@@ -902,6 +965,210 @@ textarea {
 }
 
 /* ============================================
+   VOTE MODAL
+   ============================================ */
+.vote-desc {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+.vote-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vote-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    transition: border var(--transition), transform var(--transition), background var(--transition);
+}
+
+.vote-item:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+}
+
+.vote-item.voted {
+    border-color: var(--accent);
+    background: rgba(41, 151, 255, 0.06);
+}
+
+.vote-item-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    flex-shrink: 0;
+}
+
+.vote-item-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.vote-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vote-item-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vote-item-type {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+}
+
+.vote-bar-track {
+    height: 4px;
+    background: var(--bg-input);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.vote-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.6s cubic-bezier(.4, 0, .2, 1);
+}
+
+.vote-item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 72px;
+}
+
+.vote-count {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.vote-count-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.btn-vote {
+    background: var(--bg-input);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    padding: 5px 14px;
+    border-radius: 980px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+
+.btn-vote:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.btn-vote.voted {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.btn-vote:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* Sticky vote count badge / button */
+.sticky-vote-count {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 500;
+    margin-top: 4px;
+    opacity: 0.9;
+    background: rgba(41, 151, 255, 0.1);
+    border: 1px solid rgba(41, 151, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 980px;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sticky-vote-count:hover {
+    background: var(--accent);
+    color: #fff;
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+/* Voter Avatars Stack */
+.voter-avatars {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.voter-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-card);
+    margin-left: -8px;
+    background: var(--bg-elevated);
+    object-fit: cover;
+}
+
+.voter-avatars .voter-avatar:first-child {
+    margin-left: 0;
+}
+
+.voter-more {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    margin-left: -8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    z-index: 10;
+}
+
+/* ============================================
    LIGHTBOX
    ============================================ */
 .lightbox {
@@ -1042,8 +1309,10 @@ textarea {
 @media (max-width: 640px) {
     .topnav-inner {
         padding: 12px 16px;
-        flex-wrap: nowrap;
-        justify-content: space-between;
+        height: auto;
+        min-height: 52px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .topnav-logo {
@@ -1051,47 +1320,27 @@ textarea {
         width: auto;
     }
 
-    /* Override inline "none" if JS sets it to "block" but we only want to reveal it on Mobile */
-    #btn-mobile-menu[style*="display: block"] {
-        display: block !important;
+    .topnav-right {
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
-    .topnav-actions {
-        display: none; /* ซ่อนตอนแรก รอกดปุ่มสามจุด */
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 12px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow);
-        flex-direction: column;
-        padding: 12px;
-        gap: 12px;
-        min-width: 160px;
-        z-index: 200;
-        width: auto;
+    .user-name {
+        display: none;
     }
 
-    .topnav-actions.show {
-        display: flex;
+    .mode-toggle {
+        order: 10;
     }
 
-    .topnav-actions .nav-btn {
-        width: 100%;
-        text-align: center;
-        padding: 10px;
-    }
-
-    /* เอาปุ่ม import/export กลับมาเพราะตอนนี้เป็น Dropdown แล้ว มีที่เหลือเฟือ */
-    #btn-import, #btn-export {
-        display: block !important; 
+    .mode-btn {
+        padding: 4px 10px;
+        font-size: 0.7rem;
     }
 
     .nav-btn {
         padding: 6px 14px;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
     }
 
     .hero {
@@ -1103,16 +1352,18 @@ textarea {
     }
 
     .selector-section {
-        padding: 0 12px 24px;
+        padding: 0 16px 24px;
+        max-width: 100vw;
     }
 
     .selector-grid {
         flex-direction: column;
+        align-items: stretch;
         gap: 10px;
     }
 
     .selector-card {
-        padding: 16px 20px;
+        padding: 16px 14px;
     }
 
     .selector-vs {

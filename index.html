@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>House Comparison</title>
     <meta name="description" content="เปรียบเทียบข้อมูลที่พัก 2 หลัง แบบ side-by-side">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -19,15 +20,26 @@
     <nav class="topnav">
         <div class="topnav-inner">
             <a href="#" class="topnav-logo">🏠 เปรียบเทียบที่พัก</a>
-            <div class="topnav-right" style="display: flex; gap: 8px; align-items: center; position: relative;">
-                <button id="btn-theme" class="nav-btn ghost" title="สลับธีม">🌙</button>
-                <button id="btn-mobile-menu" class="nav-btn ghost admin-only" style="display:none; font-size: 1.2rem; padding: 4px 10px; line-height: 1;">⋮</button>
-                
-                <div class="topnav-actions" id="topnav-actions">
-                    <!-- Admin Buttons (Hidden by default) -->
-                    <button id="btn-manage" class="nav-btn admin-only" style="display:none;">จัดการที่พัก</button>
-                    <button id="btn-logout" class="nav-btn ghost admin-only" style="display:none; color: #ff453a; border-color: rgba(255, 69, 58, 0.4);">ออกจากระบบ</button>
+            <div class="topnav-right">
+
+                <!-- User Profile Area (แสดงเมื่อล็อกอิน) -->
+                <div id="user-profile-area" class="user-profile-area" style="display:none;"></div>
+
+                <!-- Admin Mode Toggle (แสดงเมื่อเป็น Admin) -->
+                <div id="mode-toggle" class="mode-toggle" style="display:none;">
+                    <button class="mode-btn active" data-mode="admin">🔧 Admin</button>
+                    <button class="mode-btn" data-mode="user">👤 User</button>
                 </div>
+
+                <!-- Action Buttons (dynamic ตาม mode) -->
+                <button id="btn-manage" class="nav-btn" style="display:none;">จัดการที่พัก</button>
+                <button id="btn-vote-nav" class="nav-btn">โหวตที่พัก</button>
+
+                <!-- Logout (แสดงเมื่อ login แล้ว) -->
+                <button id="btn-logout" class="nav-btn ghost"
+                    style="display:none; color: #ff453a; border-color: rgba(255, 69, 58, 0.4);">ออกจากระบบ</button>
+
+                <button id="btn-theme" class="nav-btn ghost" title="สลับธีม">🌙</button>
             </div>
         </div>
     </nav>
@@ -100,6 +112,20 @@
         </div>
     </div>
 
+    <!-- ======== VOTE MODAL ======== -->
+    <div id="modal-vote" class="modal-overlay" style="display:none;">
+        <div class="modal manage-modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2>โหวตที่พักที่ชอบ</h2>
+                <button class="modal-close" data-close="modal-vote">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="vote-desc">เลือกที่พักที่คุณชอบมากที่สุด (เปลี่ยนได้ตลอด)</p>
+                <div id="vote-list" class="vote-list"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- ======== ADD/EDIT MODAL ======== -->
     <div id="modal-edit" class="modal-overlay" style="display:none;">
         <div class="modal edit-modal">
@@ -132,11 +158,13 @@
                         <label>รูปภาพ (เลือกไฟล์จากเครื่อง หรือแปะ URL)</label>
                         <div style="margin-bottom: 8px;">
                             <input type="file" id="f-image-upload" accept="image/*" multiple style="display:none;">
-                            <button type="button" class="btn-secondary full-w" onclick="document.getElementById('f-image-upload').click()">📷 อัปโหลดไฟล์รูปภาพจากเครื่อง</button>
+                            <button type="button" class="btn-secondary full-w"
+                                onclick="document.getElementById('f-image-upload').click()">📷
+                                อัปโหลดไฟล์รูปภาพจากเครื่อง</button>
                         </div>
-                        <textarea id="f-images" rows="3"
-                            placeholder="https://example.com/photo.jpg"></textarea>
-                        <small class="form-hint">เลือกรูปภาพหลายรูปพร้อมกันได้ หรือจะแปะลิงก์ URL (1 บรรทัดต่อ 1 ลิงก์) ก็ได้เช่นกัน</small>
+                        <textarea id="f-images" rows="3" placeholder="https://example.com/photo.jpg"></textarea>
+                        <small class="form-hint">เลือกรูปภาพหลายรูปพร้อมกันได้ หรือจะแปะลิงก์ URL (1 บรรทัดต่อ 1 ลิงก์)
+                            ก็ได้เช่นกัน</small>
                     </div>
 
                     <!-- Dynamic fields -->
@@ -176,31 +204,7 @@
         </div>
     </div>
 
-    <!-- ======== LOGIN MODAL (Admin) ======== -->
-    <div id="modal-login" class="modal-overlay" style="display:none;">
-        <div class="modal manage-modal" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2>Admin Login 🔒</h2>
-                <button class="modal-close" data-close="modal-login">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="login-form">
-                    <div class="form-group">
-                        <label>อีเมล</label>
-                        <input type="email" id="login-email" required placeholder="admin@example.com" autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label>รหัสผ่าน</label>
-                        <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
-                    </div>
-                    <div class="form-actions" style="justify-content: flex-start; flex-direction: column;">
-                        <button type="submit" class="btn-primary full-w">เข้าสู่ระบบจัดการข้อมูล</button>
-                        <small id="login-err" class="req" style="margin-top: 8px; text-align: center; display:none;">รหัสผ่านไม่ถูกต้อง</small>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Login modal removed — now using Google OAuth button on navbar -->
 
     <!-- ======== IMAGE LIGHTBOX ======== -->
     <div id="lightbox" class="lightbox" style="display:none;">
