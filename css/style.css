@@ -431,6 +431,7 @@ textarea {
 }
 
 .sticky-col {
+    position: relative;
     text-align: center;
 }
 
@@ -453,6 +454,29 @@ textarea {
     font-size: 0.78rem;
     color: var(--text-tertiary);
     margin-top: 2px;
+}
+
+.btn-edit-quick {
+    position: absolute;
+    top: 6px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform var(--transition), background var(--transition);
+}
+.btn-edit-quick:hover {
+    transform: scale(1.1);
+    background: var(--bg-input);
 }
 
 /* Body */
@@ -788,13 +812,32 @@ textarea {
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
+    transition: transform 0.2s, opacity 0.2s;
 }
 
-.dyn-row input:first-child {
+.dyn-row.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.dyn-drag-handle {
+    cursor: grab;
+    padding: 0 4px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    user-select: none;
+    font-size: 1.1rem;
+}
+.dyn-drag-handle:active {
+    cursor: grabbing;
+}
+
+.dyn-row .dyn-label {
     max-width: 140px;
 }
 
-.dyn-row input:nth-child(2) {
+.dyn-row .dyn-value {
     flex: 1;
 }
 

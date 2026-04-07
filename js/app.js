@@ -108,6 +108,35 @@ document.addEventListener('DOMContentLoaded', () => {
         addDynFieldRow('', '');
     });
 
+    // ---- Dynamic field drag & drop reordering ----
+    const fieldsContainer = document.getElementById('dynamic-fields');
+    fieldsContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(fieldsContainer, e.clientY);
+        const draggingElement = document.querySelector('.dragging');
+        if (draggingElement) {
+            if (afterElement == null) {
+                fieldsContainer.appendChild(draggingElement);
+            } else {
+                fieldsContainer.insertBefore(draggingElement, afterElement);
+            }
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.dyn-row:not(.dragging)')];
+    
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
     // ---- Image Upload Handling ----
     document.getElementById('f-image-upload').addEventListener('change', async (e) => {
         const files = e.target.files;

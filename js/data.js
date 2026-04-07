@@ -71,6 +71,8 @@ onAuthStateChanged(auth, (user) => {
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = user ? 'block' : 'none';
     });
+    // สั่งวาด UI ตารางเปรียบเทียบใหม่ เพื่อเพิ่ม/ลบปุ่มแก้ไขด่วน
+    if (window.renderComparison) window.renderComparison();
 });
 
 // ==== Data Access Functions ====

@@ -15,12 +15,16 @@ function showToast(msg, duration = 2500) {
 function populateSelectors() {
     if (typeof window.getAllHouses !== 'function') return; // Wait until data.js is loaded
     const houses = window.getAllHouses();
+    const leftVal = document.getElementById('select-left').value;
+    const rightVal = document.getElementById('select-right').value;
+
     ['left', 'right'].forEach(side => {
         const csel = document.getElementById('csel-' + side);
         const hidden = document.getElementById('select-' + side);
         const menu = csel.querySelector('.cs-menu');
         const textEl = csel.querySelector('.cs-text');
         const currentVal = hidden.value;
+        const otherVal = side === 'left' ? rightVal : leftVal;
 
         if (houses.length === 0) {
             menu.innerHTML = '<div class="cs-empty">ยังไม่มีที่พัก<br>กด "จัดการที่พัก" เพื่อเพิ่ม</div>';
@@ -31,6 +35,7 @@ function populateSelectors() {
                 const thumb = h.images && h.images.length > 0
                     ? `<img class="cs-option-thumb" src="${escAttr(h.images[0])}" alt="">`
                     : `<div class="cs-option-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🏠</div>`;
+
                 return `<div class="cs-option${h.id === currentVal ? ' active' : ''}" data-value="${h.id}">
                     ${thumb}
                     <div class="cs-option-info">
@@ -58,7 +63,7 @@ function populateSelectors() {
         }
 
         // Bind option clicks
-        menu.querySelectorAll('.cs-option').forEach(opt => {
+        menu.querySelectorAll('.cs-option:not(.disabled)').forEach(opt => {
             opt.addEventListener('click', () => {
                 const val = opt.dataset.value;
                 hidden.value = val;
@@ -119,6 +124,13 @@ function renderComparison() {
     // Sticky header
     document.getElementById('sticky-left').innerHTML = stickyColHTML(left);
     document.getElementById('sticky-right').innerHTML = stickyColHTML(right);
+
+    // Bind edit buttons
+    document.querySelectorAll('.btn-edit-quick').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openEditModal(btn.dataset.id);
+        });
+    });
 
     // Body
     const body = document.getElementById('compare-body');
@@ -195,7 +207,10 @@ function stickyColHTML(house) {
     const thumb = house.images && house.images.length > 0
         ? `<img class="sticky-thumb" src="${escAttr(house.images[0])}" alt="${escAttr(house.name)}">`
         : `<div class="sticky-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-input);">🏠</div>`;
-    return `${thumb}<div class="sticky-name">${escHTML(house.name)}</div><div class="sticky-type">${escHTML(house.type)}</div>`;
+        
+    const btnEdit = window.isAdmin ? `<button class="btn-edit-quick admin-only" data-id="${house.id}" title="แก้ไขข้อมูล">✏️</button>` : '';
+
+    return `${thumb}${btnEdit}<div class="sticky-name">${escHTML(house.name)}</div><div class="sticky-type">${escHTML(house.type)}</div>`;
 }
 
 function sectionHTML(title, galleryRows, innerHTML) {
@@ -386,11 +401,22 @@ function addDynFieldRow(label, value) {
     const container = document.getElementById('dynamic-fields');
     const row = document.createElement('div');
     row.className = 'dyn-row';
+    row.draggable = true;
     row.innerHTML = `
+        <div class="dyn-drag-handle" title="ลากเพื่อสลับลำดับ">☰</div>
         <input type="text" class="dyn-label" placeholder="ชื่อ field" value="${escAttr(label || '')}">
         <input type="text" class="dyn-value" placeholder="ค่า" value="${escAttr(value || '')}">
         <button type="button" class="btn-icon dyn-remove" title="ลบ">✕</button>
     `;
+    
+    // Drag events
+    row.addEventListener('dragstart', () => {
+        row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+    });
+    
     row.querySelector('.dyn-remove').addEventListener('click', () => row.remove());
     container.appendChild(row);
 }
